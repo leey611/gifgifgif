@@ -1,7 +1,9 @@
 'use client'
-
+import { useState, useEffect } from 'react'
+import Plane from '@/components/Plane'
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
+import { randFloat, generateUUID } from "three/src/math/MathUtils";
 
 const Logo = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Logo), { ssr: false })
 const Dog = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Dog), { ssr: false })
@@ -24,11 +26,77 @@ const View = dynamic(() => import('@/components/canvas/View').then((mod) => mod.
 const Common = dynamic(() => import('@/components/canvas/View').then((mod) => mod.Common), { ssr: false })
 
 export default function Page() {
+  const [planes, setPlanes] = useState([])
+
+  const fetchRandomGif = async () => {
+    const giphyEndpoint = `https://api.giphy.com/v1/gifs/random?api_key=${process.env.NEXT_PUBLIC_GIPHY_API_KEY}`;
+    try {
+      const response = await fetch(giphyEndpoint);
+      if (!response.ok) {
+        throw new Error("Failed to fetch data");
+      }
+
+      const data = await response.json();
+      const randomGifUrl = data.data.images.fixed_height.mp4;
+      setPlanes((prevPlanes) => [
+        ...prevPlanes,
+        {
+          id: generateUUID(),
+          position: [randFloat(-5, 5), randFloat(-5, 5), randFloat(-5, 5)],
+          url: randomGifUrl,
+          offset: randFloat(-Math.PI * 2, Math.PI * 2),
+          shrinking: false
+        }
+      ])
+    } catch (error) {
+      console.error("Error fetching random GIF:", error);
+    }
+  };
+
+  const createVideoElement = (source) => {
+    const vid = document.createElement("video");
+    vid.src = source;
+    vid.crossOrigin = "Anonymous";
+    vid.loop = true;
+    vid.muted = true;
+    vid.play();
+    return vid;
+  };
+
+  const removePlane = (id) => {
+    console.log('remove plane')
+    const updatedPlanes = planes.map(plane => plane.id !== id ? plane : { ...plane, shrinking: true })
+    setPlanes(updatedPlanes)
+    // const filteredPlanes = planes.filter(plane => plane.id !== id)
+    // setPlanes(filteredPlanes)
+  }
+
+  useEffect(() => {
+    // const interval = setInterval(() => setPlanes(planes => [...planes, { position: [randFloat(-5, 5), randFloat(-5, 5), randFloat(-5, 5)] }]), 1000)
+    const interval = setInterval(() => fetchRandomGif(), 1000)
+    return () => clearInterval(interval)
+  }, [])
   return (
     <>
-      <div className='mx-auto flex w-full flex-col flex-wrap items-center md:flex-row  lg:w-4/5'>
-        {/* jumbo */}
-        <div className='flex w-full flex-col items-start justify-center p-12 text-center md:w-2/5 md:text-left'>
+      <View orbit className='relative h-full  w-full'>
+        {/* <Suspense fallback={null}>
+          <Dog scale={1} position={[0, -1.6, 0]} rotation={[0.0, -0.3, 0]} />
+          <Common color={'lightpink'} />
+        </Suspense> */}
+        {planes.length && planes.map((plane, i) => (
+          <Plane key={plane.id} {...plane} removePlane={() => removePlane(plane.id)} />
+        ))}
+        {/* <Plane position={initialPosition} /> */}
+        {/* <mesh ref={boxRef} onClick={() => console.log("you clicked me")} >
+          <boxGeometry />
+          <meshNormalMaterial />
+        </mesh> */}
+        <Common color={'black'} />
+        <gridHelper />
+      </View>
+      {/* <div className='mx-auto flex w-full flex-col flex-wrap items-center md:flex-row  lg:w-4/5'> */}
+      {/* jumbo */}
+      {/* <div className='flex w-full flex-col items-start justify-center p-12 text-center md:w-2/5 md:text-left'>
           <p className='w-full uppercase'>Next + React Three Fiber</p>
           <h1 className='my-4 text-5xl font-bold leading-tight'>Next 3D Starter</h1>
           <p className='mb-8 text-2xl leading-normal'>A minimalist starter for React, React-three-fiber and Threejs.</p>
@@ -41,12 +109,12 @@ export default function Page() {
               <Common />
             </Suspense>
           </View>
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
 
-      <div className='mx-auto flex w-full flex-col flex-wrap items-center p-12 md:flex-row  lg:w-4/5'>
-        {/* first row */}
-        <div className='relative h-48 w-full py-6 sm:w-1/2 md:my-12 md:mb-40'>
+      {/* <div className='mx-auto flex w-full flex-col flex-wrap items-center p-12 md:flex-row  lg:w-4/5'> */}
+      {/* first row */}
+      {/* <div className='relative h-48 w-full py-6 sm:w-1/2 md:my-12 md:mb-40'>
           <h2 className='mb-3 text-3xl font-bold leading-none text-gray-800'>Events are propagated</h2>
           <p className='mb-8 text-gray-600'>Drag, scroll, pinch, and rotate the canvas to explore the 3D scene.</p>
         </div>
@@ -57,26 +125,18 @@ export default function Page() {
               <Common color={'lightpink'} />
             </Suspense>
           </View>
-        </div>
-        {/* second row */}
-        <div className='relative my-12 h-48 w-full py-6 sm:w-1/2 md:mb-40'>
+        </div> */}
+      {/* second row */}
+      {/* <div className='relative my-12 h-48 w-full py-6 sm:w-1/2 md:mb-40'>
           <View orbit className='relative h-full animate-bounce sm:h-48 sm:w-full'>
             <Suspense fallback={null}>
               <Duck route='/blob' scale={2} position={[0, -1.6, 0]} />
               <Common color={'lightblue'} />
             </Suspense>
           </View>
-        </div>
-        <div className='w-full p-6 sm:w-1/2'>
-          <h2 className='mb-3 text-3xl font-bold leading-none text-gray-800'>Dom and 3D are synchronized</h2>
-          <p className='mb-8 text-gray-600'>
-            3D Divs are renderer through the View component. It uses gl.scissor to cut the viewport into segments. You
-            tie a view to a tracking div which then controls the position and bounds of the viewport. This allows you to
-            have multiple views with a single, performant canvas. These views will follow their tracking elements,
-            scroll along, resize, etc.
-          </p>
-        </div>
-      </div>
+        </div> */}
+
+      {/* </div> */}
     </>
   )
 }
