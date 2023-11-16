@@ -92,7 +92,7 @@ export default function Page() {
     }, [])
     return (
         <>
-            <button className='text-blue-500 fixed z-50 pointer' onClick={fetchRandomGif}>get random gif</button>
+            <button className='text-blue-500 fixed z-50 cursor-pointer' onClick={fetchRandomGif}>get random gif</button>
             <View orbit className='relative h-full  w-full'>
 
                 {planes.length && planes.map((plane, i) => (

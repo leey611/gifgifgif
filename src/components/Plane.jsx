@@ -14,7 +14,7 @@ export default function Plane(props) {
         vid.crossOrigin = "Anonymous";
         vid.loop = true;
         vid.muted = true;
-        var playPromise = vid.play();
+        let playPromise = vid.play();
 
         if (playPromise !== undefined) {
             playPromise.then(_ => {
